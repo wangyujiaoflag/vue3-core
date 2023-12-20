@@ -346,7 +346,7 @@ function doWatch(
   }
 
   // important: mark the job as a watcher callback so that scheduler knows
-  // it is allowed to self-trigger (#1727)
+  // it is allowed to self-trigger (#1727) 有cb就可以允许递归
   job.allowRecurse = !!cb
 
   let scheduler: EffectScheduler
@@ -436,7 +436,7 @@ export function createPathGetter(ctx: any, path: string) {
     return cur
   }
 }
-
+// traverse
 export function traverse(value: unknown, seen?: Set<unknown>) {
   if (!isObject(value) || (value as any)[ReactiveFlags.SKIP]) {
     return value

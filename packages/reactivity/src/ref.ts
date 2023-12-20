@@ -37,6 +37,10 @@ type RefBase<T> = {
   value: T
 }
 
+/**
+ * 收集依赖
+ * @param ref
+ */
 export function trackRefValue(ref: RefBase<any>) {
   if (shouldTrack && activeEffect) {
     ref = toRaw(ref)
@@ -51,7 +55,10 @@ export function trackRefValue(ref: RefBase<any>) {
     }
   }
 }
-
+/**
+ * 执行副作用
+ * 获取dep、执行dep中的effects
+ */
 export function triggerRefValue(ref: RefBase<any>, newVal?: any) {
   ref = toRaw(ref)
   const dep = ref.dep

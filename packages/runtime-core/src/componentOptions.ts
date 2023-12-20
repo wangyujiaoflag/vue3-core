@@ -968,7 +968,7 @@ export function createWatcher(
 }
 
 /**
- * Resolve merged options and cache it on the component.
+ * Resolve merged options and cache it on the component.解析合并的选项并将其缓存在组件上。
  * This is done only once per-component since the merging does not involve
  * instances.
  */

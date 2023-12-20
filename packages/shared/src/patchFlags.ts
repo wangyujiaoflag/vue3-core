@@ -16,6 +16,8 @@
  * Check the `patchElement` function in '../../runtime-core/src/renderer.ts' to see how the
  * flags are handled during diff.
  */
+// 编译器生成的优化提示 当diff过程中遇到带有dynamicChildren的块时，算法进入“优化模式”。在这种模式下，我们知道vdom是由
+// 编译器生成的渲染函数，因此算法只需要处理由这些补丁标志显式标记的更新
 export const enum PatchFlags {
   /**
    * Indicates an element with dynamic textContent (children fast path)
@@ -52,7 +54,7 @@ export const enum PatchFlags {
   /**
    * Indicates an element with props with dynamic keys. When keys change, a full
    * diff is always needed to remove the old key. This flag is mutually
-   * exclusive with CLASS, STYLE and PROPS.
+   * exclusive with CLASS, STYLE and PROPS. 此标志与CLASS、STYLE和PROP相互排斥。
    */
   FULL_PROPS = 1 << 4,
 
@@ -69,6 +71,7 @@ export const enum PatchFlags {
 
   /**
    * Indicates a fragment with keyed or partially keyed children
+   * 指示具有键控或部分键控子项的片段
    */
   KEYED_FRAGMENT = 1 << 7,
 

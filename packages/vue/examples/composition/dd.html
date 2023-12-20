@@ -1,0 +1,74 @@
+<script src="../../dist/vue.global.js"></script>
+<div id="app">
+  <div>
+    <div v-if="v">a:{{state.a}}</div>
+    <div>b:{{state.b}}</div>
+    <div>v:{{v}}</div>
+    <button @click="add">点击a自增1</button>
+    <button @click="edit">点击v改变</button>
+    <Item></Item>
+  </div>
+</div>
+
+<script>
+  const target = {
+    name: 'John',
+    age: 25
+  }
+
+  const proxy = new Proxy(target, {
+    get(target, prop, receiver) {
+      console.log(`读取属性 ${prop}`)
+      return Reflect.get(...arguments)
+    },
+    set(target, prop, value, receiver) {
+      console.log(`设置属性 ${prop} 的值为 ${value}`, ...arguments)
+      return Reflect.set(...arguments)
+    }
+  })
+  proxy.name = 'wy'
+  // console.log(target.name, proxy.name, '--get')
+  // console.log(target.name,'--get');
+
+  const {
+    createApp,
+    reactive,
+    computed,
+    ref,
+    onMounted,
+    onUnmounted,
+    onBeforeMount
+  } = Vue
+  // debugger
+  createApp({
+    setup() {
+      const state = reactive({
+        a: 0,
+        b: 3
+      })
+      const v = ref(0)
+      function add() {
+        state.a = state.a + 1
+      }
+      function edit() {
+        v.value = v.value + state.a
+      }
+      onBeforeMount(() => {
+        console.log('组件挂载前')
+      })
+      onMounted(() => {
+        console.log('组件挂载')
+      })
+      onUnmounted(() => {
+        console.log('组件卸载')
+      })
+
+      return {
+        state,
+        v,
+        add,
+        edit
+      }
+    }
+  }).mount('#app')
+</script>

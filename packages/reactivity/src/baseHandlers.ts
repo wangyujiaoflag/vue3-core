@@ -53,9 +53,11 @@ function createArrayInstrumentations() {
   ;(['includes', 'indexOf', 'lastIndexOf'] as const).forEach(key => {
     instrumentations[key] = function (this: unknown[], ...args: unknown[]) {
       const arr = toRaw(this) as any
+      // 收集依赖
       for (let i = 0, l = this.length; i < l; i++) {
         track(arr, TrackOpTypes.GET, i + '')
       }
+      // 运行
       // we run the method using the original args first (which may be reactive)
       const res = arr[key](...args)
       if (res === -1 || res === false) {
@@ -70,6 +72,7 @@ function createArrayInstrumentations() {
   // which leads to infinite loops in some cases (#2137)
   ;(['push', 'pop', 'shift', 'unshift', 'splice'] as const).forEach(key => {
     instrumentations[key] = function (this: unknown[], ...args: unknown[]) {
+      // 改变原数组的方法，先暂停收集依赖，然后再执行，最后恢复依赖收集
       pauseTracking()
       const res = (toRaw(this) as any)[key].apply(this, args)
       resetTracking()
@@ -79,12 +82,21 @@ function createArrayInstrumentations() {
   return instrumentations
 }
 
+/**
+ * 收集依赖 has
+ */
 function hasOwnProperty(this: object, key: string) {
   const obj = toRaw(this)
   track(obj, TrackOpTypes.HAS, key)
   return obj.hasOwnProperty(key)
 }
 
+/**
+ * get(target,key,receiver)
+ * 1、根据key的reactiveFlag返回(isReactive、shallow、readonly) 返回boolean值
+ * 2、key = raw && receiver中根据readonly、shallow得到的map中有target 返回target
+ * 3、是对象的话，根据readonly包装res
+ */
 class BaseReactiveHandler implements ProxyHandler<Target> {
   constructor(
     protected readonly _isReadonly = false,
@@ -117,21 +129,27 @@ class BaseReactiveHandler implements ProxyHandler<Target> {
 
     const targetIsArray = isArray(target)
 
+    // 默认可读
     if (!isReadonly) {
+      // arrayInstrumentations中的属性包含key，执行arrayInstrumentations中的方法获取值
       if (targetIsArray && hasOwn(arrayInstrumentations, key)) {
         return Reflect.get(arrayInstrumentations, key, receiver)
       }
+      // 收集依赖
       if (key === 'hasOwnProperty') {
         return hasOwnProperty
       }
     }
 
+    // 获取target.key的值
     const res = Reflect.get(target, key, receiver)
 
     if (isSymbol(key) ? builtInSymbols.has(key) : isNonTrackableKeys(key)) {
       return res
     }
 
+    // 依赖收集 get
+    // 可读 && 不属于builtInSymbols或isNonTrackableKeys
     if (!isReadonly) {
       track(target, TrackOpTypes.GET, key)
     }
@@ -140,6 +158,7 @@ class BaseReactiveHandler implements ProxyHandler<Target> {
       return res
     }
 
+    // res判断
     if (isRef(res)) {
       // ref unwrapping - skip unwrap for Array + integer key.
       return targetIsArray && isIntegerKey(key) ? res : res.value
@@ -156,7 +175,14 @@ class BaseReactiveHandler implements ProxyHandler<Target> {
   }
 }
 
+/**
+ * set
+ * deleteProperty
+ * has
+ * ownKeys
+ */
 class MutableReactiveHandler extends BaseReactiveHandler {
+  // 一定是可读的，默认是深响应的
   constructor(shallow = false) {
     super(false, shallow)
   }
@@ -168,19 +194,24 @@ class MutableReactiveHandler extends BaseReactiveHandler {
     receiver: object
   ): boolean {
     let oldValue = (target as any)[key]
+    // oldValue is readonly and ref，but newValue is not ref，return false
     if (isReadonly(oldValue) && isRef(oldValue) && !isRef(value)) {
       return false
     }
+    // deep 修改值
     if (!this._shallow) {
+      // 获取新旧值原生值
       if (!isShallow(value) && !isReadonly(value)) {
         oldValue = toRaw(oldValue)
         value = toRaw(value)
       }
+      // 修改旧值，将value复制给oldValue.value
       if (!isArray(target) && isRef(oldValue) && !isRef(value)) {
         oldValue.value = value
         return true
       }
     } else {
+      // 在浅层模式下，无论是否具有反应性，对象都按原样设置
       // in shallow mode, objects are set as-is regardless of reactive or not
     }
 

@@ -42,9 +42,10 @@ export class ComputedRefImpl<T> {
     isSSR: boolean
   ) {
     this.effect = new ReactiveEffect(getter, () => {
+      // 表示组件或页面的状态是否发生了变化 副作用触发的时候状态更新，dirty = true
       if (!this._dirty) {
         this._dirty = true
-        triggerRefValue(this)
+        triggerRefValue(this) // 触发自身
       }
     })
     this.effect.computed = this

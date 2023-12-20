@@ -5,11 +5,11 @@ let activeEffectScope: EffectScope | undefined
 
 export class EffectScope {
   /**
-   * @internal
+   * @internal 是否在当前上下文中
    */
   private _active = true
   /**
-   * @internal
+   * @internal 依赖者集合
    */
   effects: ReactiveEffect[] = []
   /**
@@ -75,15 +75,17 @@ export class EffectScope {
    * @internal
    */
   off() {
-    activeEffectScope = this.parent
+    activeEffectScope = this.parent // parent用于重置
   }
 
   stop(fromParent?: boolean) {
     if (this._active) {
       let i, l
+      // 停止执行副作用
       for (i = 0, l = this.effects.length; i < l; i++) {
         this.effects[i].stop()
       }
+      // 将副作用从依赖集合中移除
       for (i = 0, l = this.cleanups.length; i < l; i++) {
         this.cleanups[i]()
       }
@@ -93,6 +95,7 @@ export class EffectScope {
         }
       }
       // nested scope, dereference from parent to avoid memory leaks
+      // 嵌套作用域，从父级取消引用以避免内存泄漏
       if (!this.detached && this.parent && !fromParent) {
         // optimized O(1) removal
         const last = this.parent.scopes!.pop()
@@ -125,13 +128,13 @@ export function recordEffectScope(
   scope: EffectScope | undefined = activeEffectScope
 ) {
   if (scope && scope.active) {
-    scope.effects.push(effect)
+    scope.effects.push(effect) // 收集订阅者
   }
 }
 
 /**
  * Returns the current active effect scope if there is one.
- *
+ * 当前副作用域
  * @see {@link https://vuejs.org/api/reactivity-advanced.html#getcurrentscope}
  */
 export function getCurrentScope() {

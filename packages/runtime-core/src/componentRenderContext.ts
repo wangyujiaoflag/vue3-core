@@ -4,7 +4,7 @@ import { setBlockTracking } from './vnode'
 
 /**
  * mark the current rendering instance for asset resolution (e.g.
- * resolveComponent, resolveDirective) during render
+ * resolveComponent, resolveDirective) during render 在渲染期间解析组件、指令
  */
 export let currentRenderingInstance: ComponentInternalInstance | null = null
 export let currentScopeId: string | null = null

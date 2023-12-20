@@ -72,6 +72,7 @@ export const createApp = ((...args) => {
 
   const { mount } = app
   app.mount = (containerOrSelector: Element | ShadowRoot | string): any => {
+    // 1、获取对应的dom元素
     const container = normalizeContainer(containerOrSelector)
     if (!container) return
 
@@ -98,7 +99,9 @@ export const createApp = ((...args) => {
     }
 
     // clear content before mounting
+    // 2、清空页面内容
     container.innerHTML = ''
+    // 3、挂载
     const proxy = mount(container, false, container instanceof SVGElement)
     if (container instanceof Element) {
       container.removeAttribute('v-cloak')

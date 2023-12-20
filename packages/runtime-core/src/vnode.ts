@@ -229,8 +229,8 @@ export interface VNode<
 // can divide a template into nested blocks, and within each block the node
 // structure would be stable. This allows us to skip most children diffing
 // and only worry about the dynamic nodes (indicated by patch flags).
-export const blockStack: (VNode[] | null)[] = []
-export let currentBlock: VNode[] | null = null
+export const blockStack: (VNode[] | null)[] = [] // 栈、收集dom树动态结点
+export let currentBlock: VNode[] | null = null // 当前层的动态结点
 
 /**
  * Open a block.
@@ -257,9 +257,9 @@ export function closeBlock() {
   currentBlock = blockStack[blockStack.length - 1] || null
 }
 
-// Whether we should be tracking dynamic child nodes inside a block.
-// Only tracks when this value is > 0
-// We are not using a simple boolean because this value may need to be
+// Whether we should be tracking dynamic child nodes inside a block. 在一个块级元素里是否应该收集动态子节点
+// Only tracks when this value is > 0 只有当值大于0时才收集
+// We are not using a simple boolean because this value may need to be v-once 只渲染一次，不管有没有patchFlag等符合等信息
 // incremented/decremented by nested usage of v-once (see below)
 export let isBlockTreeEnabled = 1
 
@@ -474,10 +474,10 @@ function createBaseVNode(
     warn(`VNode created with invalid key (NaN). VNode type:`, vnode.type)
   }
 
-  // track vnode for block tree
+  // track vnode for block tree 为block树收集虚拟结点
   if (
     isBlockTreeEnabled > 0 &&
-    // avoid a block node from tracking itself
+    // avoid a block node from tracking itself 避免块级结点收集自己
     !isBlockNode &&
     // has current parent block
     currentBlock &&
@@ -485,6 +485,8 @@ function createBaseVNode(
     // component nodes also should always be patched, because even if the
     // component doesn't need to update, it needs to persist the instance on to
     // the next vnode so that it can be properly unmounted later.
+    // 补丁标志的存在表明此节点需要在更新时进行补丁。
+    // 组件节点也应该始终进行修补，因为即使组件不需要更新，它需要将实例持久化到下一个vnode，以便以后可以正确地卸载它。
     (vnode.patchFlag > 0 || shapeFlag & ShapeFlags.COMPONENT) &&
     // the EVENTS flag is only for hydration and if it is the only flag, the
     // vnode should not be considered dynamic due to handler caching.
@@ -570,6 +572,7 @@ function _createVNode(
   }
 
   // encode the vnode type information into a bitmap
+  // 将vnode类型信息编码为位图
   const shapeFlag = isString(type)
     ? ShapeFlags.ELEMENT
     : __FEATURE_SUSPENSE__ && isSuspense(type)
@@ -847,6 +850,13 @@ export function mergeProps(...args: (Data & VNodeProps)[]) {
   return ret
 }
 
+/**
+ * 执行函数 vnode
+ * @param hook
+ * @param instance
+ * @param vnode
+ * @param prevVNode
+ */
 export function invokeVNodeHook(
   hook: VNodeHook,
   instance: ComponentInternalInstance | null,

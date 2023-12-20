@@ -323,6 +323,7 @@ function pushNode(nodes: TemplateChildNode[], node: TemplateChildNode): void {
     const prev = last(nodes)
     // Merge if both this and the previous node are text and those are
     // consecutive. This happens for cases like "a < b".
+    // 如果此节点和上一个节点都是文本，并且连续。这种情况发生在类似“a<b”的情况下
     if (
       prev &&
       prev.type === NodeTypes.TEXT &&
@@ -1097,6 +1098,7 @@ function startsWith(source: string, searchString: string): boolean {
   return source.startsWith(searchString)
 }
 
+// 更新source、pos位置
 function advanceBy(context: ParserContext, numberOfCharacters: number): void {
   const { source } = context
   __TEST__ && assert(numberOfCharacters <= source.length)

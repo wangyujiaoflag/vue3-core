@@ -5,24 +5,46 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Jest",
+      "name": "启动程序",
       "type": "node",
       "request": "launch",
-      "program": "${workspaceFolder}/node_modules/.bin/jest",
-      "stopOnEntry": false,
-      "args": ["${fileBasename}", "--runInBand", "--detectOpenHandles"],
-      "cwd": "${workspaceFolder}",
-      "preLaunchTask": null,
-      "runtimeExecutable": null,
-      "runtimeArgs": ["--nolazy"],
-      "env": {
-        "NODE_ENV": "development"
-      },
-      "console": "integratedTerminal",
-      "sourceMaps": true,
-      "windows": {
-        "program": "${workspaceFolder}/node_modules/jest/bin/jest",
-      }
+      "skipFiles": ["<node_internals>/**"],
+      "program": "${file}"
+    },
+    {
+      "name": "Launch Chrome",
+      "type": "chrome",
+      "request": "launch",
+      "url": "http://localhost:8080",
+      "webRoot": "${workspaceFolder}",
+      "file": "${workspaceFolder}/packages/vue/examples/composition/${fileBasename}"
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Launch TS",
+      "runtimeArgs": ["-r", "ts-node/register"],
+      "args": ["${workspaceFolder}/test.ts"]
     }
+    // {
+    //   "name": "Jest",
+    //   "type": "node",
+    //   "request": "launch",
+    //   "program": "${workspaceFolder}/node_modules/.bin/jest",
+    //   "stopOnEntry": false,
+    //   "args": ["${fileBasename}", "--runInBand", "--detectOpenHandles"],
+    //   "cwd": "${workspaceFolder}",
+    //   "preLaunchTask": null,
+    //   "runtimeExecutable": null,
+    //   "runtimeArgs": ["--nolazy"],
+    //   "env": {
+    //     "NODE_ENV": "development"
+    //   },
+    //   "console": "integratedTerminal",
+    //   "sourceMaps": true,
+    //   "windows": {
+    //     "program": "${workspaceFolder}/node_modules/jest/bin/jest"
+    //   }
+    // }
   ]
 }

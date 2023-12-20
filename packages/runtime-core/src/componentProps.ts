@@ -187,6 +187,13 @@ type NormalizedProp =
 export type NormalizedProps = Record<string, NormalizedProp>
 export type NormalizedPropsOptions = [NormalizedProps, string[]] | []
 
+/**
+ * 初始化props
+ * @param instance
+ * @param rawProps
+ * @param isStateful
+ * @param isSSR
+ */
 export function initProps(
   instance: ComponentInternalInstance,
   rawProps: Data | null,
@@ -214,7 +221,7 @@ export function initProps(
   }
 
   if (isStateful) {
-    // stateful
+    // stateful 非ssr props为浅响应
     instance.props = isSSR ? props : shallowReactive(props)
   } else {
     if (!instance.type.props) {
@@ -503,13 +510,13 @@ export function normalizePropsOptions(
   appContext: AppContext,
   asMixin = false
 ): NormalizedPropsOptions {
-  const cache = appContext.propsCache
-  const cached = cache.get(comp)
+  const cache = appContext.propsCache // weakMap
+  const cached = cache.get(comp) // 获取组件的缓存 首次没有
   if (cached) {
     return cached
   }
 
-  const raw = comp.props
+  const raw = comp.props // 获取模版上的props
   const normalized: NormalizedPropsOptions[0] = {}
   const needCastKeys: NormalizedPropsOptions[1] = []
 

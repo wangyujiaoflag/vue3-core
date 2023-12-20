@@ -123,6 +123,7 @@ const KeepAliveImpl: ComponentOptions = {
         o: { createElement }
       }
     } = sharedContext
+    // 通过不可见元素缓存vnode，sharedContext扩展生命周期先移动再patch最后queuePostRenderEffect
     const storageContainer = createElement('div')
 
     sharedContext.activate = (vnode, container, anchor, isSVG, optimized) => {
@@ -201,11 +202,12 @@ const KeepAliveImpl: ComponentOptions = {
         // we can't unmount it now but it might be later, so reset its flag now.
         resetShapeFlag(current)
       }
+      // 保证顺序是最新的 LRU
       cache.delete(key)
       keys.delete(key)
     }
 
-    // prune cache on include/exclude prop change
+    // prune cache on include/exclude prop change 监听
     watch(
       () => [props.include, props.exclude],
       ([include, exclude]) => {
@@ -375,7 +377,7 @@ export function onDeactivated(
 ) {
   registerKeepAliveHook(hook, LifecycleHooks.DEACTIVATED, target)
 }
-
+// 注册keep-alive相关的生命周期
 function registerKeepAliveHook(
   hook: Function & { __wdc?: Function },
   type: LifecycleHooks,
@@ -383,7 +385,7 @@ function registerKeepAliveHook(
 ) {
   // cache the deactivate branch check wrapper for injected hooks so the same
   // hook can be properly deduped by the scheduler. "__wdc" stands for "with
-  // deactivation check".
+  // deactivation check". 为注入的钩子缓存deactivate分支检查包装器，以便调度器可以正确地对同一个钩子进行重复数据消除。“__wdc”代表“带停用检查”
   const wrappedHook =
     hook.__wdc ||
     (hook.__wdc = () => {
@@ -402,7 +404,7 @@ function registerKeepAliveHook(
   // chain and register it on all ancestor instances that are keep-alive roots.
   // This avoids the need to walk the entire component tree when invoking these
   // hooks, and more importantly, avoids the need to track child components in
-  // arrays.
+  // arrays. 除了在目标实例上注册它之外，我们还遍历父实例链并将其注册到所有作为保持活动根的祖先实例上。这避免了在调用这些时遍历整个组件树的需要钩子，更重要的是，避免了在中跟踪子组件的需要阵列。
   if (target) {
     let current = target.parent
     while (current && current.parent) {

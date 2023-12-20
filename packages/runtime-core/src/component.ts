@@ -481,6 +481,13 @@ const emptyAppContext = createAppContext()
 
 let uid = 0
 
+/**
+ * 创建组件实例
+ * @param vnode
+ * @param parent
+ * @param suspense
+ * @returns
+ */
 export function createComponentInstance(
   vnode: VNode,
   parent: ComponentInternalInstance | null,
@@ -492,17 +499,17 @@ export function createComponentInstance(
     (parent ? parent.appContext : vnode.appContext) || emptyAppContext
 
   const instance: ComponentInternalInstance = {
-    uid: uid++,
+    uid: uid++, // uid增加 一个新的组件
     vnode,
     type,
     parent,
     appContext,
     root: null!, // to be immediately set
     next: null,
-    subTree: null!, // will be set synchronously right after creation
+    subTree: null!, // will be set synchronously right after creation 将在创建后立即同步设置
     effect: null!,
     update: null!, // will be set synchronously right after creation
-    scope: new EffectScope(true /* detached */),
+    scope: new EffectScope(true /* detached */), // detached
     render: null,
     proxy: null,
     exposed: null,
@@ -578,6 +585,7 @@ export function createComponentInstance(
   instance.emit = emit.bind(null, instance)
 
   // apply custom element special handling
+  // 执行自定义元素制定回调
   if (vnode.ce) {
     vnode.ce(instance)
   }
@@ -624,13 +632,13 @@ if (__SSR__) {
   }
 } else {
   internalSetCurrentInstance = i => {
-    currentInstance = i
+    currentInstance = i // 当前组件实例更新
   }
 }
 
 export const setCurrentInstance = (instance: ComponentInternalInstance) => {
   internalSetCurrentInstance(instance)
-  instance.scope.on()
+  instance.scope.on() // scope这里是个副作用 当前副作用域激活 activeEffectScope = this
 }
 
 export const unsetCurrentInstance = () => {
@@ -655,6 +663,12 @@ export function isStatefulComponent(instance: ComponentInternalInstance) {
 
 export let isInSSRComponentSetup = false
 
+/**
+ * 初始化props、slots、获取setupResult
+ * @param instance
+ * @param isSSR
+ * @returns
+ */
 export function setupComponent(
   instance: ComponentInternalInstance,
   isSSR = false
@@ -673,6 +687,12 @@ export function setupComponent(
   return setupResult
 }
 
+/**
+ * 执行setup 响应式处理、render函数生成
+ * @param instance
+ * @param isSSR
+ * @returns
+ */
 function setupStatefulComponent(
   instance: ComponentInternalInstance,
   isSSR: boolean
@@ -704,9 +724,10 @@ function setupStatefulComponent(
     }
   }
   // 0. create render proxy property access cache
+  // 创建渲染代理属性访问缓存
   instance.accessCache = Object.create(null)
-  // 1. create public instance / render proxy
-  // also mark it raw so it's never observed
+  // 1. create public instance / render proxy 创建公共实例/渲染代理
+  // also mark it raw so it's never observed 同时标记它为原生的让它永远不被观察 _、&xx
   instance.proxy = markRaw(new Proxy(instance.ctx, PublicInstanceProxyHandlers))
   if (__DEV__) {
     exposePropsOnRenderContext(instance)
@@ -717,16 +738,16 @@ function setupStatefulComponent(
     const setupContext = (instance.setupContext =
       setup.length > 1 ? createSetupContext(instance) : null)
 
-    setCurrentInstance(instance)
-    pauseTracking()
+    setCurrentInstance(instance) // 第一次挂载组件时，执行setupComponent方法，在这里设置当前实例currentInstance = instance
+    pauseTracking() // 暂停收集 // 下面的方法也用来生命周期注入
     const setupResult = callWithErrorHandling(
       setup,
       instance,
       ErrorCodes.SETUP_FUNCTION,
-      [__DEV__ ? shallowReadonly(instance.props) : instance.props, setupContext]
-    )
-    resetTracking()
-    unsetCurrentInstance()
+      [__DEV__ ? shallowReadonly(instance.props) : instance.props, setupContext] // props只读 不可修改
+    ) // setup函数执行结果
+    resetTracking() // 恢复上一次收集状态
+    unsetCurrentInstance() // 重置当前组件实例
 
     if (isPromise(setupResult)) {
       setupResult.then(unsetCurrentInstance, unsetCurrentInstance)
@@ -830,6 +851,12 @@ export function registerRuntimeCompiler(_compile: any) {
 // dev only
 export const isRuntimeOnly = () => !compile
 
+/**
+ * options合并、模版解析、代码生成、render函数挂载在组件实例上
+ * @param instance
+ * @param isSSR
+ * @param skipOptions
+ */
 export function finishComponentSetup(
   instance: ComponentInternalInstance,
   isSSR: boolean,
@@ -850,6 +877,7 @@ export function finishComponentSetup(
   if (!instance.render) {
     // only do on-the-fly compile if not in SSR - SSR on-the-fly compilation
     // is done by server-renderer
+    // 只有在非 SSR 的情况下才进行即时编译
     if (!isSSR && compile && !Component.render) {
       const template =
         (__COMPAT__ &&
@@ -868,7 +896,7 @@ export function finishComponentSetup(
           extend(
             {
               isCustomElement,
-              delimiters
+              delimiters //分隔符
             },
             compilerOptions
           ),

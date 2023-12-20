@@ -485,7 +485,7 @@ export const PublicInstanceProxyHandlers: ProxyHandler<any> = {
     } else if (hasOwn(descriptor, 'value')) {
       this.set!(target, key, descriptor.value, null)
     }
-    return Reflect.defineProperty(target, key, descriptor)
+    return Reflect.defineProperty(target, key, descriptor) // 通过relect操作target对象
   }
 }
 
@@ -528,23 +528,24 @@ export const RuntimeCompiledPublicInstanceProxyHandlers = /*#__PURE__*/ extend(
 // In dev mode, the proxy target exposes the same properties as seen on `this`
 // for easier console inspection. In prod mode it will be an empty object so
 // these properties definitions can be skipped.
+// 创建开发环境下的渲染上下文
 export function createDevRenderContext(instance: ComponentInternalInstance) {
   const target: Record<string, any> = {}
 
-  // expose internal instance for proxy handlers
+  // expose internal instance for proxy handlers 暴露自身实例给proxy回调
   Object.defineProperty(target, `_`, {
     configurable: true,
     enumerable: false,
     get: () => instance
   })
 
-  // expose public properties
+  // expose public properties 暴露公共属性
   Object.keys(publicPropertiesMap).forEach(key => {
     Object.defineProperty(target, key, {
       configurable: true,
       enumerable: false,
       get: () => publicPropertiesMap[key](instance),
-      // intercepted by the proxy so no need for implementation,
+      // intercepted拦截 by the proxy so no need for implementation生效,
       // but needed to prevent set errors
       set: NOOP
     })

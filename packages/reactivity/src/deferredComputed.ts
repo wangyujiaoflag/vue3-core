@@ -6,8 +6,13 @@ import { trackRefValue, triggerRefValue } from './ref'
 
 const tick = /*#__PURE__*/ Promise.resolve()
 const queue: any[] = []
-let queued = false
+let queued = false // 锁
 
+/**
+ * 调度方法，向队列中添加fn
+ * queue为false时，清空队列
+ * @param fn
+ */
 const scheduler = (fn: any) => {
   queue.push(fn)
   if (!queued) {
@@ -16,6 +21,9 @@ const scheduler = (fn: any) => {
   }
 }
 
+/**
+ * 执行队列中的方法，然后清空队列，重置queued
+ */
 const flush = () => {
   for (let i = 0; i < queue.length; i++) {
     queue[i]()
@@ -57,6 +65,8 @@ class DeferredComputedRefImpl<T> {
         // chained upstream computeds are notified synchronously to ensure
         // value invalidation in case of sync access; normal effects are
         // deferred to be triggered in scheduler.
+        // 正常的effect在scheduler调度程序中触发
+        // 同步通知上游的computed确保同步访问时值无效
         for (const e of this.dep) {
           if (e.computed instanceof DeferredComputedRefImpl) {
             e.scheduler!(true /* computedTrigger */)
@@ -77,6 +87,7 @@ class DeferredComputedRefImpl<T> {
   }
 
   get value() {
+    // 收集依赖
     trackRefValue(this)
     // the computed ref may get wrapped by other proxies e.g. readonly() #3376
     return toRaw(this)._get()

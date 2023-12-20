@@ -14,11 +14,11 @@ import {
 import type { UnwrapRefSimple, Ref, RawSymbol } from './ref'
 
 export const enum ReactiveFlags {
-  SKIP = '__v_skip',
+  SKIP = '__v_skip', // 是否跳过某个节点的渲染
   IS_REACTIVE = '__v_isReactive',
   IS_READONLY = '__v_isReadonly',
   IS_SHALLOW = '__v_isShallow',
-  RAW = '__v_raw'
+  RAW = '__v_raw' // 用于存放原始的响应式数据。它通常在Vue的响应式系统中使用，用于跟踪和更新组件的数据
 }
 
 export interface Target {
@@ -35,9 +35,9 @@ export const readonlyMap = new WeakMap<Target, any>()
 export const shallowReadonlyMap = new WeakMap<Target, any>()
 
 const enum TargetType {
-  INVALID = 0,
-  COMMON = 1,
-  COLLECTION = 2
+  INVALID = 0, // 无效的
+  COMMON = 1, // common
+  COLLECTION = 2 // 集合
 }
 
 function targetTypeMap(rawType: string) {
@@ -54,7 +54,7 @@ function targetTypeMap(rawType: string) {
       return TargetType.INVALID
   }
 }
-
+// 非skip、可拓展
 function getTargetType(value: Target) {
   return value[ReactiveFlags.SKIP] || !Object.isExtensible(value)
     ? TargetType.INVALID
@@ -258,7 +258,7 @@ function createReactiveObject(
     }
     return target
   }
-  // target is already a Proxy, return it.
+  // target is already a Proxy, return it. 如果已经是proxy，直接返回就行，除了在一个响应式对象调用readonly
   // exception: calling readonly() on a reactive object
   if (
     target[ReactiveFlags.RAW] &&
@@ -266,17 +266,17 @@ function createReactiveObject(
   ) {
     return target
   }
-  // target already has corresponding Proxy
+  // target already has corresponding Proxy 目标对象已经是响应式proxy 直接返回
   const existingProxy = proxyMap.get(target)
   if (existingProxy) {
     return existingProxy
   }
-  // only specific value types can be observed.
+  // only specific value types can be observed. 只有🈯️定的值类型才可以被观察
   const targetType = getTargetType(target)
   if (targetType === TargetType.INVALID) {
     return target
   }
-  const proxy = new Proxy(
+  const proxy = new Proxy( // 对目标对象进行代理，weakmap：target->proxy(target, xxxHandlers)
     target,
     targetType === TargetType.COLLECTION ? collectionHandlers : baseHandlers
   )
@@ -372,7 +372,7 @@ export type Raw<T> = T & { [RawSymbol]?: true }
 /**
  * Marks an object so that it will never be converted to a proxy. Returns the
  * object itself.
- *
+ * 不会转成响应式对象
  * @example
  * ```js
  * const foo = markRaw({})
@@ -392,7 +392,7 @@ export type Raw<T> = T & { [RawSymbol]?: true }
  * @see {@link https://vuejs.org/api/reactivity-advanced.html#markraw}
  */
 export function markRaw<T extends object>(value: T): Raw<T> {
-  def(value, ReactiveFlags.SKIP, true)
+  def(value, ReactiveFlags.SKIP, true) // skip 跳过
   return value
 }
 
